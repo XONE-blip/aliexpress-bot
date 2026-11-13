@@ -1,0 +1,38 @@
+name: Post deal
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: post-deal
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install python-aliexpress-api requests
+
+      - name: Run bot
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python bot.py
+
+      - name: Save seen.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add seen.json || true
+          git diff --cached --quiet || (git commit -m "update seen" && git push)
