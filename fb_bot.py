@@ -58,14 +58,42 @@ def build_text(p):
     price = float(p.target_sale_price)
     eur = round(price * USD_TO_EUR, 2)
     discount = get_discount(p)
-    return "\n".join([
-        "اشتري بالدولار لتحصل على هذا السعر",
-        f"تخفيض لـ {title}",
-        f"الثمن بعد ${price:.2f} (€{eur:.2f}) 🔥 (-{discount}%)",
-        "خصم باستعمال العملات عند الشراء",
-        "رابط الشراء في التعليقات 👇",
-        "#Aliexpress",
-    ])
+
+    templates = [
+        # Format 1: offre
+        "\n".join([
+            f"🔥 عرض اليوم: {title}",
+            f"💰 الثمن: ${price:.2f} (€{eur:.2f})",
+            f"📉 تخفيض {discount}%",
+            "🛒 رابط الشراء تحت 👇",
+            "#Aliexpress #عروض",
+        ]),
+        # Format 2: sghir w mbacher
+        "\n".join([
+            f"⚡ {title}",
+            f"بـ ${price:.2f} غير (-{discount}%)",
+            "الرابط في الأسفل 👇",
+            "#تخفيضات #Aliexpress",
+        ]),
+        # Format 3: b soual
+        "\n".join([
+            f"واش كتقلب على {title}؟ 🤔",
+            f"دابا بـ ${price:.2f} (€{eur:.2f}) فقط 🎉",
+            f"تخفيض {discount}% لمدة محدودة ⏳",
+            "الرابط 👇",
+            "#Aliexpress",
+        ]),
+        # Format 4: b l'achkal
+        "\n".join([
+            "✅ منتج مميز بثمن مناسب",
+            f"📦 {title}",
+            f"💵 ${price:.2f} (€{eur:.2f})",
+            f"🏷️ خصم {discount}%",
+            "👇 اشري من هنا",
+            "#Aliexpress #عروض_اليوم",
+        ]),
+    ]
+    return random.choice(templates)
 
 
 def post_one():
