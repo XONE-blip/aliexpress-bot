@@ -1,0 +1,30 @@
+name: Test reel video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+          pip install python-aliexpress-api requests pillow arabic-reshaper==3.0.0 python-bidi==0.4.2
+
+      - name: Make video
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+        run: python make_reel.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reel
+          path: reel.mp4
