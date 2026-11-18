@@ -1,8 +1,6 @@
 name: Post to Facebook
 
 on:
-  schedule:
-      - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
