@@ -7,9 +7,14 @@ from aliexpress_api import AliexpressApi, models
 
 APP_KEY = "505520"
 TRACKING_ID = "telegram"
-CHAT_ID = "-1001756449090"
-APP_SECRET = os.environ["2t5PEalC0R6ZGhHp7hswtkfwdVAFDysl"]
-BOT_TOKEN = os.environ["9166153384:AAE9gJokkqyo7RUV8mUUdYGR3mKkoa56-xo"]
+APP_SECRET = os.environ["APP_SECRET"]
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+
+# lista dyal groups (zid chat_id dyal kol group)
+CHAT_IDS = [
+    "-1001756449090",
+    "-100XXXXXXXXXX",
+]
 
 MIN_DISCOUNT = 30
 USD_TO_EUR = 0.89
@@ -65,7 +70,6 @@ def build_caption(p):
     discount = get_discount(p)
     link = short_link(p)
 
-    # الصيغة 1
     f1 = [
         "اشترِ بالدولار لتحصل على هذا السعر",
         f"تخفيض على {title}",
@@ -74,7 +78,6 @@ def build_caption(p):
         "خصم إضافي عند الدفع باستخدام العملات",
     ]
 
-    # الصيغة 2
     f2 = [
         f"🔥 {title}",
         "",
@@ -85,7 +88,6 @@ def build_caption(p):
         f"🛒 رابط الشراء: {link}",
     ]
 
-    # الصيغة 3
     f3 = [
         "⚡ عرض لفترة محدودة ⚡",
         f"📦 {title}",
@@ -96,7 +98,6 @@ def build_caption(p):
         "#Aliexpress #عروض",
     ]
 
-    # الصيغة 4
     f4 = [
         f"هل تبحث عن {title}؟ 🤔",
         f"الآن بسعر ${price:.2f} (€{eur:.2f}) فقط 🎉",
@@ -117,6 +118,24 @@ def build_caption(p):
     return "\n".join(lines)[:1000]
 
 
+def send_to_all(p, caption):
+    sent = 0
+    for chat_id in CHAT_IDS:
+        r = requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
+            data={
+                "chat_id": chat_id,
+                "photo": p.product_main_image_url,
+                "caption": caption,
+                "parse_mode": "HTML",
+            },
+        )
+        print(chat_id, r.text[:120])
+        if r.json().get("ok"):
+            sent += 1
+    return sent
+
+
 def post_one():
     keyword = random.choice(KEYWORDS)
     print("Kan9elleb 3la:", keyword)
@@ -130,22 +149,12 @@ def post_one():
         if get_discount(p) < MIN_DISCOUNT:
             continue
 
-        r = requests.post(
-            f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
-            data={
-                "chat_id": CHAT_ID,
-                "photo": p.product_main_image_url,
-                "caption": build_caption(p),
-                "parse_mode": "HTML",
-            },
-        )
-        print(r.text[:150])
-
-        if r.json().get("ok"):
+        caption = build_caption(p)
+        if send_to_all(p, caption) > 0:
             seen.append(pid)
             json.dump(seen[-2000:], open(SEEN_FILE, "w"))
         else:
-            print("Telegram rfd l post, kanwqf.")
+            print("Telegram rfd l post f kol groups, kanwqf.")
         return
     print("Ma l9it ta produit jdid b had discount.")
 
