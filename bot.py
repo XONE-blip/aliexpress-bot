@@ -13,7 +13,6 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 # lista dyal groups (zid chat_id dyal kol group)
 CHAT_IDS = [
     "-1001756449090",
-    "-100XXXXXXXXXX",
 ]
 
 MIN_DISCOUNT = 30
