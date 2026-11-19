@@ -8,12 +8,15 @@ from aliexpress_api import AliexpressApi, models
 APP_KEY = "505520"
 TRACKING_ID = "telegram"
 CHAT_ID = "-1001756449090"
-APP_SECRET = os.environ["APP_SECRET"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+APP_SECRET = os.environ["2t5PEalC0R6ZGhHp7hswtkfwdVAFDysl"]
+BOT_TOKEN = os.environ["9166153384:AAE9gJokkqyo7RUV8mUUdYGR3mKkoa56-xo"]
 
 MIN_DISCOUNT = 30
 USD_TO_EUR = 0.89
-COUPON_LINE = ""
+COUPON_LINE = ""      # mathalan: "كوبون $4/25 : OTD1104"  (khlliha "" ila ma 3ndekch)
+
+# 0 = kol marra format mkhtalef (random), wla 1 / 2 / 3 / 4 l format mo3ayyan
+FORMAT_MODE = 0
 
 KEYWORDS = [
     "smart watch", "wireless earbuds", "kitchen gadgets", "phone case",
@@ -57,52 +60,30 @@ def short_link(p):
 def build_caption(p):
     title = html.escape(p.product_title[:80])
     price = float(p.target_sale_price)
+    original = float(p.target_original_price)
     eur = round(price * USD_TO_EUR, 2)
-    link = short_link(p)
     discount = get_discount(p)
+    link = short_link(p)
 
-    lines = [
+    # Format 1: l format l9dim (b l3arbiya)
+    f1 = [
         "شتري بالدولار لتحصل على هذا السعر",
         f"تخفيض لـ {title}",
         f"الثمن بعد ${price:.2f} (€{eur:.2f}) 🔥 (-{discount}%)",
         f"رابط {link}",
         "خصم باستعمال العملات عند الشراء",
     ]
-    if COUPON_LINE:
-        lines.append(html.escape(COUPON_LINE))
-    lines.append("الموقع #Aliexpress")
-    return "\n".join(lines)
 
+    # Format 2: nqi w mbacher
+    f2 = [
+        f"🔥 {title}",
+        "",
+        f"💰 الثمن: ${price:.2f} (€{eur:.2f})",
+        f"❌ كان: ${original:.2f}",
+        f"📉 تخفيض {discount}%",
+        "",
+        f"🛒 {link}",
+    ]
 
-def post_one():
-    keyword = random.choice(KEYWORDS)
-    print("Kan9elleb 3la:", keyword)
-    products = ali.get_products(keywords=keyword, page_size=50,
-                                sort="LAST_VOLUME_DESC")
-
-    for p in products.products:
-        pid = str(p.product_id)
-        if pid in seen:
-            continue
-        if get_discount(p) < MIN_DISCOUNT:
-            continue
-
-        r = requests.post(
-            f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
-            data={
-                "chat_id": CHAT_ID,
-                "photo": p.product_main_image_url,
-                "caption": build_caption(p),
-                "parse_mode": "HTML",
-            },
-        )
-        print(r.text[:150])
-
-        if r.json().get("ok"):
-            seen.append(pid)
-            json.dump(seen[-2000:], open(SEEN_FILE, "w"))
-            return
-    print("Ma l9it ta produit jdid b had discount.")
-
-
-post_one()
+    # Format 3: b l'ichara l hatifiya
+    f3 = [
