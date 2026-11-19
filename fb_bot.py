@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import time
 import requests
 from aliexpress_api import AliexpressApi, models
 
@@ -60,7 +61,6 @@ def build_text(p):
     discount = get_discount(p)
 
     templates = [
-        # Format 1: offre
         "\n".join([
             f"🔥 عرض اليوم: {title}",
             f"💰 الثمن: ${price:.2f} (€{eur:.2f})",
@@ -68,14 +68,12 @@ def build_text(p):
             "🛒 رابط الشراء تحت 👇",
             "#Aliexpress #عروض",
         ]),
-        # Format 2: sghir w mbacher
         "\n".join([
             f"⚡ {title}",
             f"بـ ${price:.2f} غير (-{discount}%)",
             "الرابط في الأسفل 👇",
             "#تخفيضات #Aliexpress",
         ]),
-        # Format 3: b soual
         "\n".join([
             f"واش كتقلب على {title}؟ 🤔",
             f"دابا بـ ${price:.2f} (€{eur:.2f}) فقط 🎉",
@@ -83,7 +81,6 @@ def build_text(p):
             "الرابط 👇",
             "#Aliexpress",
         ]),
-        # Format 4: b l'achkal
         "\n".join([
             "✅ منتج مميز بثمن مناسب",
             f"📦 {title}",
@@ -110,7 +107,6 @@ def post_one():
             continue
 
         text = build_text(p)
-        link = short_link(p)
 
         r = requests.post(
             f"{GRAPH}/{FB_PAGE_ID}/photos",
@@ -121,12 +117,14 @@ def post_one():
             },
         )
         print("photo:", r.text[:200])
-        data = r.json()
-        post_id = data.get("post_id")
+        post_id = r.json().get("post_id")
         if not post_id:
-            continue
+            print("Facebook rfd l post, kanwqf.")
+            return
 
-        # l lien f comment
+        time.sleep(2)
+        link = short_link(p)
+
         c = requests.post(
             f"{GRAPH}/{post_id}/comments",
             data={"message": f"🛒 رابط الشراء: {link}",
@@ -134,7 +132,6 @@ def post_one():
         )
         print("comment:", c.text[:200])
 
-        # ila comment ma khdmch, n7ett l lien f nss dyal post
         if "id" not in c.json():
             u = requests.post(
                 f"{GRAPH}/{post_id}",
