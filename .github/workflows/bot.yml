@@ -1,7 +1,6 @@
 name: Post deal
 
 on:
-  
   workflow_dispatch:
 
 permissions:
@@ -34,4 +33,4 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add seen.json || true
-          git diff --cached --quiet || (git commit -m "update seen" && git push)
+          git diff --cached --quiet || (git commit -m "update seen" && git pull --rebase && git push)
