@@ -12,6 +12,8 @@ FB_TOKEN = os.environ["FB_TOKEN"]
 FB_PAGE_ID = os.environ["FB_PAGE_ID"]
 GRAPH = "https://graph.facebook.com/v27.0"
 
+TELEGRAM_LINK = "https://t.me/aliexpresssdailydeals"
+
 MIN_DISCOUNT = 30
 USD_TO_EUR = 0.89
 
@@ -54,6 +56,10 @@ def short_link(p):
         return p.promotion_link
 
 
+def telegram_line():
+    return f"📲 انضم إلى قناتنا على تلغرام لتصلك أحدث العروض: {TELEGRAM_LINK}"
+
+
 def build_text(p):
     title = p.product_title[:80]
     price = float(p.target_sale_price)
@@ -63,30 +69,38 @@ def build_text(p):
     templates = [
         "\n".join([
             f"🔥 عرض اليوم: {title}",
-            f"💰 الثمن: ${price:.2f} (€{eur:.2f})",
+            f"💰 السعر: ${price:.2f} (€{eur:.2f})",
             f"📉 تخفيض {discount}%",
-            "🛒 رابط الشراء تحت 👇",
+            "🛒 رابط الشراء في الأسفل 👇",
+            "",
+            telegram_line(),
             "#Aliexpress #عروض",
         ]),
         "\n".join([
             f"⚡ {title}",
-            f"بـ ${price:.2f} غير (-{discount}%)",
+            f"بسعر ${price:.2f} فقط (-{discount}%)",
             "الرابط في الأسفل 👇",
+            "",
+            telegram_line(),
             "#تخفيضات #Aliexpress",
         ]),
         "\n".join([
-            f"واش كتقلب على {title}؟ 🤔",
-            f"دابا بـ ${price:.2f} (€{eur:.2f}) فقط 🎉",
-            f"تخفيض {discount}% لمدة محدودة ⏳",
+            f"هل تبحث عن {title}؟ 🤔",
+            f"الآن بسعر ${price:.2f} (€{eur:.2f}) فقط 🎉",
+            f"تخفيض {discount}% لفترة محدودة ⏳",
             "الرابط 👇",
+            "",
+            telegram_line(),
             "#Aliexpress",
         ]),
         "\n".join([
-            "✅ منتج مميز بثمن مناسب",
+            "✅ منتج مميز بسعر مناسب",
             f"📦 {title}",
             f"💵 ${price:.2f} (€{eur:.2f})",
             f"🏷️ خصم {discount}%",
-            "👇 اشري من هنا",
+            "👇 للشراء اضغط على الرابط",
+            "",
+            telegram_line(),
             "#Aliexpress #عروض_اليوم",
         ]),
     ]
@@ -135,7 +149,7 @@ def post_one():
         if "id" not in c.json():
             u = requests.post(
                 f"{GRAPH}/{post_id}",
-                data={"message": text + f"\n🛒 {link}",
+                data={"message": text + f"\n🛒 رابط الشراء: {link}",
                       "access_token": FB_TOKEN},
             )
             print("update:", u.text[:200])
