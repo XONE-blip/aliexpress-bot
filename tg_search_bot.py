@@ -13,9 +13,20 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 SHIP_TO = "MA"          # Maghrib
 MIN_RATING = 90         # a9all rating (%)
 MIN_ORDERS = 50         # a9all 3dad dyal talabat
+MIN_PRICE = 1.0         # kayhyyd l produits b taman a9all mn hadchi ($)
 MAX_RESULTS = 5
+PAGES = 2               # chhal mn safha n9llb fiha (kol safha 50 produit)
 USD_TO_EUR = 0.89
 ALLOWED_USER_IDS = []   # khlliha [] bach ykhdem l ga3, wla 7ett ID dyalek
+
+# kalimat li katkoun f smiya dyal accessoire (machi l produit nafsso)
+EXCLUDE_PHRASES = [
+    "case for", "cover for", "pouch for", "tips for", "ear tips", "eartips",
+    "ear pads", "earpads", "ear cushion", "replacement", "sticker",
+    "skin for", "protector", "protective case", "silicone case",
+    "hook for", "holder for", "strap for", "film for", "cable for",
+    "adapter for", "charger for", "only case",
+]
 
 OFFSET_FILE = "tg_offset.json"
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -43,21 +54,48 @@ def to_float(v):
     return float(m.group()) if m else None
 
 
-def search(query):
-    kwargs = dict(keywords=query, page_size=50, sort="SALE_PRICE_ASC")
+def query_words(query):
+    words = re.findall(r"[a-z0-9]+", query.lower())
+    return [w.rstrip("s") if len(w) > 3 else w for w in words]
+
+
+def title_matches(title, query):
+    t = title.lower()
+    words = query_words(query)
+    if not words:
+        return False
+    # koul kelma mn l bahth khassha tkoun f smiya
+    for w in words:
+        if w not in t:
+            return False
+    # smiya ma tkounch dyal accessoire (ila l mosta3mil ma tlbhach)
+    q = query.lower()
+    for phrase in EXCLUDE_PHRASES:
+        if phrase in t and phrase not in q:
+            return False
+    return True
+
+
+def fetch_items(query, ship_to):
     items = []
-    try:
-        res = ali.get_products(ship_to_country=SHIP_TO, **kwargs)
-        items = list(res.products)
-    except Exception as e:
-        print("search error (MA):", e)
-    if not items:
+    for page in range(1, PAGES + 1):
+        kwargs = dict(keywords=query, page_size=50, page_no=page,
+                      sort="LAST_VOLUME_DESC")
+        if ship_to:
+            kwargs["ship_to_country"] = ship_to
         try:
             res = ali.get_products(**kwargs)
-            items = list(res.products)
+            items.extend(list(res.products))
         except Exception as e:
-            print("search error:", e)
-            return []
+            print(f"search error (page {page}, ship_to={ship_to}):", e)
+            break
+    return items
+
+
+def search(query):
+    items = fetch_items(query, SHIP_TO)
+    if not items:
+        items = fetch_items(query, None)
 
     good, seen_ids = [], set()
     for p in items:
@@ -65,6 +103,16 @@ def search(query):
         if pid in seen_ids:
             continue
         seen_ids.add(pid)
+
+        if not title_matches(p.product_title, query):
+            continue
+        try:
+            price = float(p.target_sale_price)
+        except Exception:
+            continue
+        if price < MIN_PRICE:
+            continue
+
         rating = to_float(getattr(p, "evaluate_rate", None))
         orders = to_float(getattr(p, "lastest_volume", None))
         if rating is not None and rating < MIN_RATING:
@@ -72,9 +120,9 @@ def search(query):
         if orders is not None and orders < MIN_ORDERS:
             continue
         good.append(p)
-        if len(good) >= MAX_RESULTS:
-            break
-    return good
+
+    good.sort(key=lambda x: float(x.target_sale_price))
+    return good[:MAX_RESULTS]
 
 
 def get_links(products):
